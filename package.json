@@ -1,0 +1,19 @@
+{
+  "name": "openhazard-india",
+  "version": "4.0.0",
+  "description": "All-India 36 States & 783 Districts Spatio-Temporal Multi-Hazard GIS & Stakeholder Decision System",
+  "scripts": {
+    "start": "npx serve .",
+    "cap:init": "npx cap init OpenHazardIndia org.openhazard.india --web-dir .",
+    "cap:android": "npx cap add android && npx cap sync android && npx cap open android",
+    "cap:ios": "npx cap add ios && npx cap sync ios && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/ios": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
+  }
+}
