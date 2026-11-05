@@ -1541,7 +1541,7 @@ npx cap open android</pre>
       mapInstance = L.map('map', { preferCanvas: true }).setView([12.9165, 79.1325], 8);
       // CARTO Voyager basemap (OSM data) - OSM's own tile servers block file:// and
       // referrer-less apps under their tile usage policy, so we use a provider that permits this.
-      osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      osmLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_52xc_1_cf5f53344304faf1be700d0e', {
         subdomains: 'abcd', maxZoom: 19,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
       }).addTo(mapInstance);
