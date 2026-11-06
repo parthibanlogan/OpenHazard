@@ -1,9 +1,7 @@
 {
   "appId": "org.openhazard.india",
   "appName": "OpenHazard India",
-  "webDir": ".",
-  "bundledWebRuntime": false,
-  "server": {
-    "androidScheme": "https"
-  }
+  "webDir": "web",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false }
 }

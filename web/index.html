@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>OpenHazard India — district hazard atlas</title>
+  <meta name="description" content="District-level hazard atlas for all 36 States/UTs of India built only on open, citable data: LGD boundaries, DEM, land cover, soil, ERA5 climate, GloFAS rivers, CAMS air quality and USGS seismicity.">
+  <meta name="theme-color" content="#1c5d84" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#14201f" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Spectral:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <a class="skip" href="#dossier">Skip to district dossier</a>
+
+  <header class="bar" role="banner">
+    <button class="icon-btn only-mobile" id="btnControls" aria-controls="controls" aria-expanded="false" title="Places and layers">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 24c4-6 7-6 10-3s6 3 10-4M4 18c4-6 7-6 10-3s6 3 10-4M4 12c4-6 7-6 10-3s6 3 10-4"/></svg>
+      <div><strong>OpenHazard India</strong><span class="sub">District hazard atlas on open data</span></div>
+    </div>
+    <div class="search" role="search">
+      <label for="placeSearch" class="vh">Find a district</label>
+      <input id="placeSearch" type="search" list="placeList" placeholder="Find a district, e.g. Vellore" autocomplete="off" spellcheck="false">
+      <datalist id="placeList"></datalist>
+    </div>
+    <button class="icon-btn" id="btnLocate" title="Use my location">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      <span class="vh">Use my location</span>
+    </button>
+    <button class="icon-btn" id="btnTheme" title="Switch light or dark">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+      <span class="vh">Switch light or dark</span>
+    </button>
+  </header>
+
+  <main class="layout">
+    <aside id="controls" class="controls" aria-label="Places and map layers">
+      <section class="block">
+        <h2>Place</h2>
+        <label class="field">State or Union Territory
+          <select id="stateSelect"><option value="">All India</option></select>
+        </label>
+        <label class="field">District
+          <select id="districtSelect" disabled><option value="">Choose a State first</option></select>
+        </label>
+        <div class="row">
+          <button class="btn ghost" id="btnIndia">Show all India</button>
+          <button class="btn ghost" id="btnShare" title="Copy a link to this view">Copy link</button>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Base map</h2>
+        <div class="seg" id="basemapSeg" role="radiogroup" aria-label="Base map"></div>
+        <label class="check"><input type="checkbox" id="chkStates" checked> State boundaries</label>
+        <label class="check"><input type="checkbox" id="chkDistricts" checked> District boundaries</label>
+        <label class="check"><input type="checkbox" id="chkMask" checked> Dim outside selection</label>
+        <label class="check"><input type="checkbox" id="chkLabels"> District names</label>
+      </section>
+
+      <section class="block" id="overlayBlock">
+        <h2>Data layers</h2>
+        <p class="hint">Each layer opens with its source, resolution and licence. Layers in the same group replace each other.</p>
+        <div id="overlayGroups"></div>
+      </section>
+
+      <section class="block">
+        <h2>Compare</h2>
+        <label class="check"><input type="checkbox" id="chkSwipe"> Swipe the top data layer against the base map</label>
+      </section>
+
+      <section class="block small">
+        <h2>About the data</h2>
+        <p>Every number in this app is fetched from the open services listed under <em>Sources</em> in the dossier, at the moment you ask for it. Nothing is simulated.</p>
+        <button class="btn ghost" id="btnClearCache">Clear cached data</button>
+        <p class="meta" id="buildMeta"></p>
+      </section>
+    </aside>
+
+    <section class="mapwrap" aria-label="Map">
+      <div id="map" role="application" aria-label="Interactive map of India"></div>
+      <div class="cartouche" id="cartouche" hidden aria-live="polite"></div>
+      <div class="legend" id="legend" aria-live="polite"></div>
+      <div class="readout" id="readout" hidden></div>
+      <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </section>
+
+    <section id="dossier" class="dossier" aria-label="District dossier" data-sheet="peek">
+      <button class="grip only-mobile" id="sheetGrip" aria-label="Expand or collapse the dossier"><span></span></button>
+      <div class="dossier-head" id="dossierHead">
+        <h2 id="dossierTitle">India</h2>
+        <p id="dossierSub">Choose a State, a district, or tap the map.</p>
+      </div>
+      <nav class="tabs" id="tabs" role="tablist" aria-label="Dossier sections"></nav>
+      <div class="tabpanels" id="tabpanels"></div>
+    </section>
+  </main>
+
+  <noscript><p class="noscript">OpenHazard India needs JavaScript to draw maps and fetch open data.</p></noscript>
+
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="vendor/chart.umd.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dem.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

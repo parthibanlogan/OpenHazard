@@ -1,0 +1,16 @@
+{
+  "built_utc": "2026-11-05T16:16:16+00:00",
+  "source_commit": "e4d776828a8fc08ef1204f5ba8f4c5ca53077eda",
+  "sources": {
+    "districts": "https://raw.githubusercontent.com/yashveeeeeeer/india-geodata/e4d776828a8fc08ef1204f5ba8f4c5ca53077eda/docs/maps/data/districts.topo.json",
+    "states": "https://raw.githubusercontent.com/yashveeeeeeer/india-geodata/e4d776828a8fc08ef1204f5ba8f4c5ca53077eda/docs/maps/data/states.topo.json"
+  },
+  "licence": "CC0 1.0 (LGD boundaries via ramSeraph/indian_admin_boundaries)",
+  "districts": 785,
+  "states_uts": 36,
+  "sum_district_area_km2_simplified": 3277572.0,
+  "sha256": {
+    "districts": "21732385a41eda1421dd16db025d6773c33acaebf40a7fd1c5b027264105a510",
+    "states": "d7afca37b000ba434ffadab1796faf55f8d612f16f68661d2777d8673fba4ea3"
+  }
+}

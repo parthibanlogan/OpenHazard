@@ -1,19 +1,23 @@
 {
   "name": "openhazard-india",
-  "version": "4.0.0",
-  "description": "All-India 36 States & 783 Districts Spatio-Temporal Multi-Hazard GIS & Stakeholder Decision System",
+  "version": "5.1.0",
+  "private": true,
+  "description": "District hazard atlas for India on open, citable data (PWA + Capacitor Android/iOS)",
+  "license": "MIT",
   "scripts": {
-    "start": "npx serve .",
-    "cap:init": "npx cap init OpenHazardIndia org.openhazard.india --web-dir .",
-    "cap:android": "npx cap add android && npx cap sync android && npx cap open android",
-    "cap:ios": "npx cap add ios && npx cap sync ios && npx cap open ios"
+    "serve": "python3 -m http.server 8080 --directory web",
+    "test": "python3 tests/test_analytics.py && python3 tests/smoke_test.py",
+    "verify": "python3 tools/verify_endpoints.py",
+    "cap:sync": "npx cap sync",
+    "android": "npx cap add android; npx cap sync android && npx cap open android",
+    "ios": "npx cap add ios; npx cap sync ios && npx cap open ios"
   },
   "dependencies": {
-    "@capacitor/android": "^6.0.0",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/ios": "^6.0.0"
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.0.0"
+    "@capacitor/cli": "^6.2.0"
   }
 }
