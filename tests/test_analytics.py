@@ -109,6 +109,12 @@ def test_spi_does_not_bridge_missing_months():
     assert got == [None, 30, None, 90], got
 
 
+def test_spi_rejects_invalid_accumulation_and_month():
+    bad_k = js("(()=>{try{S.spi([],0);return false;}catch(e){return e instanceof RangeError;}})()")
+    bad_month = js("(()=>{try{S.spi([{y:2020,m:13,v:1}],1);return false;}catch(e){return e instanceof RangeError;}})()")
+    assert bad_k and bad_month
+
+
 def test_to_monthly_inserts_missing_month():
     dates = ["2020-01-01", "2020-03-01"]
     got = js("S.toMonthly(D.dates,D.values,'mean',0)", {"dates": dates, "values": [1, 3]})
