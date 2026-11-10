@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import math
 import subprocess
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -95,6 +96,31 @@ def test_spi_matches_scipy_gamma():
     ok = ~np.isnan(ref)
     assert np.array_equal(ok, ~np.isnan(got))
     assert np.max(np.abs(got[ok] - ref[ok])) < 1e-5
+
+
+def test_spi_does_not_bridge_missing_months():
+    monthly = [
+        {"y": 2020, "m": 1, "v": 10.0},
+        {"y": 2020, "m": 2, "v": 20.0},
+        {"y": 2020, "m": 4, "v": 40.0},
+        {"y": 2020, "m": 5, "v": 50.0},
+    ]
+    got = js("S.spi(D,2).map(r=>r.sum)", monthly)
+    assert got == [None, 30, None, 90], got
+
+
+def test_to_monthly_inserts_missing_month():
+    dates = ["2020-01-01", "2020-03-01"]
+    got = js("S.toMonthly(D.dates,D.values,'mean',0)", {"dates": dates, "values": [1, 3]})
+    assert [(r["y"], r["m"]) for r in got] == [(2020, 1), (2020, 2), (2020, 3)]
+    assert [r["v"] for r in got] == [1, None, 3]
+
+
+def test_annual_indices_require_complete_temperature_series():
+    dates = [(date(2021, 1, 1) + timedelta(days=i)).isoformat() for i in range(365)]
+    data = {"dates": dates, "tx": [30.0] * 365, "tn": [None] * 365, "tm": [20.0] * 365, "pr": [0.0] * 365}
+    got = js("S.annualIndices(D.dates,D.tx,D.tn,D.tm,D.pr)", data)
+    assert got == []
 
 
 def test_gumbel_lmoments():

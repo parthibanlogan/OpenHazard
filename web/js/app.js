@@ -551,16 +551,15 @@
     if (!alive()) return;
     [['Minimum', h.min], ['Mean', h.mean], ['Median', h.median], ['Maximum', h.max], ['Standard deviation', h.sd], ['Relief', h.relief]].forEach(([k, v]) => record('Terrain', `Elevation ${k.toLowerCase()}`, v, 'm', 'Copernicus DEM GLO-90 via Open-Meteo, lattice sample'));
     record('Terrain', 'Hypsometric integral', h.HI, '-', 'Strahler (1952); Pike & Wilson (1971)');
-    const stage = h.HI > 0.6 ? 'youthful, little-eroded upland' : h.HI > 0.35 ? 'mature, equilibrium landscape' : 'old, strongly eroded or plain landscape';
     panel.innerHTML = `${kv([['Mean elevation', fmt(h.mean, 0), 'm'], ['Range', `${fmt(h.min, 0)}–${fmt(h.max, 0)}`, 'm'], ['Relief', fmt(h.relief, 0), 'm', `SD ${fmt(h.sd, 0)} m`],
-      ['Hypsometric integral', fmt(h.HI, 2), '', esc(stage)], ['At analysis point', fmt(pz.elevation[0], 0), 'm']])}
+      ['Hypsometric integral', fmt(h.HI, 2), '', 'Descriptive elevation–relief ratio'], ['At analysis point', fmt(pz.elevation[0], 0), 'm']])}
       <h3>Hypsometric curve</h3><div class="chart"><canvas id="chHyps" aria-label="Hypsometric curve"></canvas></div>
-      <p class="note">Share of district area lying above each elevation, from ${h.n} lattice points inside the boundary. A convex curve (HI above 0.6) points to steep, actively eroding terrain where landslide and flash-flood susceptibility is higher; a concave curve (HI below 0.35) to floodplains.</p>
+      <p class="note">Fraction of sampled elevations above each level, from ${h.n} interior lattice points. The hypsometric integral is a descriptive elevation–relief ratio, not a calibrated measure of erosion, landslide susceptibility or flood risk.</p>
       <div class="row"><button class="btn" id="btnFitDem" type="button">Show elevation map with this range</button><button class="btn ghost" id="btnSlope" type="button">Show slope map</button></div>
       <p class="src">Copernicus DEM GLO-90 (ESA, 2021) via Open-Meteo Elevation API. Lattice of ${h.n} points; statistics of a regular sample, not of every pixel.</p>`;
     const sorted = ST.finite(d.elevation).sort((a, b) => a - b);
     chart('chHyps', { type: 'line', data: { datasets: [{ label: 'Elevation (m)', data: h.curve.map((c, i) => ({ x: c.a * 100, y: sorted[i] })), borderColor: css('--sienna'), pointRadius: 0, fill: false, tension: 0.1 }] },
-      options: { parsing: false, scales: { x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Area above this elevation (%)' } }, y: { title: { display: true, text: 'Elevation (m)' } } }, plugins: { legend: { display: false } } } });
+      options: { parsing: false, scales: { x: { type: 'linear', min: 0, max: 100, title: { display: true, text: 'Sampled elevations above this level (%)' } }, y: { title: { display: true, text: 'Elevation (m)' } } }, plugins: { legend: { display: false } } } });
     $('#btnFitDem').addEventListener('click', fitDemToDistrict);
     $('#btnSlope').addEventListener('click', () => { if (!S.overlays.has('dem_slope')) { $('#ov-dem_slope').checked = true; toggleOverlay(C.OVERLAYS.find((x) => x.id === 'dem_slope'), true); } });
   }
@@ -639,19 +638,19 @@
     const yrs = ann.map((r) => r.year);
     const trend = (k) => ST.mannKendall(yrs, ann.map((r) => r[k]));
     const tT = trend('Tmean'), tP = trend('PRCPTOT');
-    const spi3 = ST.spi(mP.filter((r) => Number.isFinite(r.v)), 3), spi12 = ST.spi(mP.filter((r) => Number.isFinite(r.v)), 12);
+    const spi3 = ST.spi(mP, 3), spi12 = ST.spi(mP, 12);
     const last3 = spi3[spi3.length - 1], last12 = spi12[spi12.length - 1];
     const gum = ST.gumbelLMoments(ann.map((r) => r.Rx1day));
     const annP = ST.mean(ann.filter((r) => r.year >= 1991 && r.year <= 2020).map((r) => r.PRCPTOT));
     record('Climate', 'Mean annual temperature 1991-2020', ST.mean(ann.filter((r) => r.year >= 1991 && r.year <= 2020).map((r) => r.Tmean)), 'degC', 'ERA5');
     record('Climate', 'Mean annual wet-day precipitation 1991-2020', annP, 'mm', 'ERA5');
-    record('Climate', 'Tmean trend (Sen)', tT.slope * 10, 'degC/decade', `ERA5, Mann-Kendall p=${tT.p.toFixed(4)}`);
-    record('Climate', 'PRCPTOT trend (Sen)', tP.slope * 10, 'mm/decade', `ERA5, Mann-Kendall p=${tP.p.toFixed(4)}`);
+    record('Climate', 'Tmean trend (Sen)', tT.slope * 10, 'degC/decade', `ERA5, Mann-Kendall nominal iid p=${tT.p.toFixed(4)}`);
+    record('Climate', 'PRCPTOT trend (Sen)', tP.slope * 10, 'mm/decade', `ERA5, Mann-Kendall nominal iid p=${tP.p.toFixed(4)}`);
     record('Climate', `SPI-3 (${last3.y}-${String(last3.m).padStart(2, '0')})`, last3.spi, '-', 'McKee et al. (1993), gamma fit 1991-2020');
     record('Climate', `SPI-12 (${last12.y}-${String(last12.m).padStart(2, '0')})`, last12.spi, '-', 'McKee et al. (1993), gamma fit 1991-2020');
     if (gum) gum.levels.forEach((l) => record('Climate', `Rx1day ${l.T}-yr return level`, l.value, 'mm', 'Gumbel, L-moments (Hosking 1990), ERA5 annual maxima'));
     const IND = [['TXx', 'Hottest day', '°C'], ['TNn', 'Coldest night', '°C'], ['TX40', 'Days with Tmax ≥ 40 °C', 'days'], ['Rx1day', 'Wettest day', 'mm'], ['R20mm', 'Days with ≥ 20 mm', 'days'], ['CDD', 'Longest dry spell (< 1 mm)', 'days'], ['PRCPTOT', 'Wet-day total', 'mm']];
-    const rows = IND.map(([k, n, u]) => { const r = trend(k); record('Climate', `${k} trend (Sen)`, r.slope * 10, `${u}/decade`, `Mann-Kendall p=${r.p.toFixed(4)}`);
+    const rows = IND.map(([k, n, u]) => { const r = trend(k); record('Climate', `${k} trend (Sen)`, r.slope * 10, `${u}/decade`, `Mann-Kendall nominal iid p=${r.p.toFixed(4)}`);
       return `<tr><td>${n}</td><td class="n">${fmt(ST.mean(ann.filter((x) => x.year >= 1991 && x.year <= 2020).map((x) => x[k])), 1)}</td><td class="n">${r.slope >= 0 ? '+' : ''}${fmt(r.slope * 10, 2)}</td><td class="n">${r.p < 0.05 ? `<b>${sig(r.p)}</b>` : sig(r.p)}</td></tr>`; }).join('');
     const spiTag = (s) => pill(ST.spiClass(s.spi), s.spi <= -1.5 || s.spi >= 1.5 ? 'alert' : '');
     panel.innerHTML = `${kv([['Warming trend', `${tT.slope >= 0 ? '+' : ''}${fmt(tT.slope * 10, 2)}`, '°C / decade', `${sig(tT.p)}, ${tT.n} years`], ['Rain trend', `${tP.slope >= 0 ? '+' : ''}${fmt(tP.slope * 10, 0)}`, 'mm / decade', `${sig(tP.p)}; normal ${fmt(annP, 0)} mm/yr`],
@@ -659,10 +658,10 @@
       <h3>Monthly normal 1991–2020 and the last 12 months</h3><div class="chart tall"><canvas id="chClim" aria-label="Monthly climatology"></canvas></div>
       <h3>Annual mean temperature with Sen's slope</h3><div class="chart"><canvas id="chTrend" aria-label="Annual temperature trend"></canvas></div>
       <h3>Drought and wetness: SPI, last 36 months</h3><div class="chart"><canvas id="chSpi" aria-label="Standardised precipitation index"></canvas></div>
-      <h3>Climate extremes (ETCCDI-style)</h3><table class="data"><thead><tr><th>Index</th><th class="n">Normal</th><th class="n">Trend per decade</th><th class="n">Mann–Kendall</th></tr></thead><tbody>${rows}</tbody></table>
+      <h3>Climate extremes (ETCCDI-style)</h3><table class="data"><thead><tr><th>Index</th><th class="n">Normal</th><th class="n">Trend per decade</th><th class="n">Nominal p (iid)</th></tr></thead><tbody>${rows}</tbody></table>
       ${gum ? `<h3>Extreme daily rain, return levels</h3><table class="data"><thead><tr>${gum.levels.map((l) => `<th class="n">${l.T}-yr</th>`).join('')}</tr></thead><tbody><tr>${gum.levels.map((l) => `<td class="n">${fmt(l.value, 0)} mm</td>`).join('')}</tr></tbody></table><p class="note">Gumbel distribution fitted by L-moments to ${gum.n} annual maxima. Assumes a stationary climate; reanalysis smooths local cloudbursts, so station extremes are usually larger.</p>` : ''}
       <h3>Humid heat: daily maximum wet-bulb temperature</h3><div id="twBox">${skeleton(2)}</div>
-      <p class="src">ERA5 reanalysis (Hersbach et al., 2020) at 0.25°, nearest grid cell, via Open-Meteo, ${t[0]} to ${t[t.length - 1]}. Trends: Mann–Kendall test with tie correction and Sen's slope (years with ≥ 90 % valid days). SPI: gamma fit per calendar month on 1991–2020 (McKee et al., 1993). Bold p-values are significant at 5 %. Reanalysis trends can contain artefacts from changes in the observing system.</p>`;
+      <p class="src">ERA5 reanalysis (Hersbach et al., 2020) at 0.25°, nearest grid cell, via Open-Meteo, ${t[0]} to ${t[t.length - 1]}. Trends: conventional Mann–Kendall test with tie correction and Sen's slope (years with ≥ 90 % valid days). Its nominal p-values assume independent annual observations; serial correlation and multiple comparisons are not adjusted, so treat them as exploratory rather than confirmatory. SPI: gamma fit per calendar month on 1991–2020 (McKee et al., 1993); accumulation windows containing missing months are omitted. Reanalysis trends can contain artefacts from changes in the observing system.</p>`;
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const lastP = mP.filter((r) => Number.isFinite(r.v)).slice(-12), lastT = mT.filter((r) => Number.isFinite(r.v)).slice(-12);
     const byM = (arr) => months.map((_, i) => { const r = arr.find((x) => x.m === i + 1); return r ? r.v : null; });
@@ -693,8 +692,8 @@
     const mk1 = ST.mannKendall(rows.map((r) => r.y), rows.map((r) => r.twx)), mk2 = ST.mannKendall(rows.map((r) => r.y), rows.map((r) => r.d28));
     const norm = rows.filter((r) => r.y >= 1991 && r.y <= 2020);
     record('Climate', 'TWx (annual max wet-bulb) normal 1991-2020', ST.mean(norm.map((r) => r.twx)), 'degC', 'ERA5 daily max wet-bulb');
-    record('Climate', 'TWx trend (Sen)', mk1.slope * 10, 'degC/decade', `Mann-Kendall p=${mk1.p.toFixed(4)}`);
-    record('Climate', 'Days with Tw >= 28 C, trend (Sen)', mk2.slope * 10, 'days/decade', `Mann-Kendall p=${mk2.p.toFixed(4)}`);
+    record('Climate', 'TWx trend (Sen)', mk1.slope * 10, 'degC/decade', `Mann-Kendall nominal iid p=${mk1.p.toFixed(4)}`);
+    record('Climate', 'Days with Tw >= 28 C, trend (Sen)', mk2.slope * 10, 'days/decade', `Mann-Kendall nominal iid p=${mk2.p.toFixed(4)}`);
     $('#twBox').innerHTML = `${kv([['Hottest humid day (TWx), normal', fmt(ST.mean(norm.map((r) => r.twx)), 1), '°C', `trend ${mk1.slope >= 0 ? '+' : ''}${fmt(mk1.slope * 10, 2)} °C/decade, ${sig(mk1.p)}`],
       ['Days with wet-bulb ≥ 28 °C', fmt(ST.mean(norm.map((r) => r.d28)), 0), 'per year', `trend ${mk2.slope >= 0 ? '+' : ''}${fmt(mk2.slope * 10, 1)} days/decade, ${sig(mk2.p)}`]])}
       <div class="chart"><canvas id="chTw" aria-label="Annual maximum wet-bulb temperature"></canvas></div>
