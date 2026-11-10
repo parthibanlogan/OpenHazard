@@ -86,7 +86,7 @@ The app must be served over http(s); `file://` blocks the boundary files and the
 
 ```bash
 pip install -r requirements-dev.txt && python -m playwright install chromium
-python tests/test_analytics.py        # 13 scientific and geometry checks, including SciPy comparisons
+python tests/test_analytics.py        # 14 scientific and geometry checks, including SciPy comparisons
 python tests/smoke_test.py --shots shots   # 59 UI checks, desktop + mobile, screenshots in shots/
 python tools/verify_endpoints.py      # live probe of 39 remote endpoints incl. GIBS fallback names (needs internet)
 python tools/build_boundaries.py      # re-download and re-validate LGD boundaries
