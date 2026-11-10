@@ -111,11 +111,24 @@
   }
   /** monthly: [{y, m, v}] chronologically ordered, contiguous. k: accumulation (months).
    *  Mixed distribution H = q + (1-q) G(x) for zeros (Thom 1966). Fitted per calendar month on the
-   *  base period [y0, y1]. Returns array of {y, m, sum, spi}. */
+   *  base period [y0, y1]. Gaps and missing/negative values invalidate every accumulation window
+   *  that crosses them. Returns array of {y, m, sum, spi}. */
   function spi(monthly, k, y0 = 1991, y1 = 2020) {
+    if (!Number.isInteger(k) || k < 1) throw new RangeError('SPI accumulation must be a positive integer number of months');
+    const ordinal = (r) => {
+      if (!Number.isInteger(r.y) || !Number.isInteger(r.m) || r.m < 1 || r.m > 12) throw new RangeError('SPI months require an integer year and month from 1 to 12');
+      return r.y * 12 + r.m - 1;
+    };
+    const ordinals = monthly.map(ordinal);
     const acc = monthly.map((r, i) => {
       if (i < k - 1) return { y: r.y, m: r.m, sum: NaN };
-      let s = 0; for (let j = i - k + 1; j <= i; j++) s += monthly[j].v;
+      let s = 0;
+      for (let j = i - k + 1; j <= i; j++) {
+        if (j > i - k + 1 && ordinals[j] !== ordinals[j - 1] + 1) return { y: r.y, m: r.m, sum: NaN };
+        const v = monthly[j].v;
+        if (!Number.isFinite(v) || v < 0) return { y: r.y, m: r.m, sum: NaN };
+        s += v;
+      }
       return { y: r.y, m: r.m, sum: s };
     });
     const params = {};
@@ -144,12 +157,17 @@
     const groups = new Map();
     dates.forEach((d, i) => { const key = d.slice(0, 7); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(values[i]); });
     const out = [];
-    groups.forEach((vals, key) => {
-      const y = +key.slice(0, 4), m = +key.slice(5, 7), days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    if (!groups.size) return out;
+    const keys = [...groups.keys()].sort();
+    const first = keys[0].split('-').map(Number), last = keys[keys.length - 1].split('-').map(Number);
+    for (let month = first[0] * 12 + first[1] - 1, end = last[0] * 12 + last[1] - 1; month <= end; month++) {
+      const y = Math.floor(month / 12), m = month % 12 + 1, key = `${y}-${String(m).padStart(2, '0')}`;
+      const vals = groups.get(key) || [];
+      const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
       const v = finite(vals);
-      const ok = v.length >= minFrac * days;
+      const ok = v.length > 0 && v.length >= minFrac * days;
       out.push({ y, m, v: ok ? (agg === 'sum' ? sum(v) : sum(v) / v.length) : NaN, n: v.length, days });
-    });
+    }
     return out;
   }
   function climatology(monthly, y0 = 1991, y1 = 2020) { // WMO standard normal period
@@ -168,7 +186,7 @@
     years.forEach((idx, y) => {
       const ndays = (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? 366 : 365;
       const ok = (arr) => finite(idx.map((i) => arr[i])).length >= 0.9 * ndays;
-      if (!ok(tmax) || !ok(pr)) return;
+      if (![tmax, tmin, tmean, pr].every(ok)) return;
       const tx = idx.map((i) => tmax[i]), tn = idx.map((i) => tmin[i]), tm = idx.map((i) => tmean[i]), p = idx.map((i) => pr[i]);
       let cdd = 0, run = 0; p.forEach((v) => { if (Number.isFinite(v) && v < 1) { run++; cdd = Math.max(cdd, run); } else run = 0; });
       out.push({

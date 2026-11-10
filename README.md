@@ -18,11 +18,11 @@ District hazard atlas for all 36 States/UTs and 785 LGD districts of India, buil
 |---|---|---|
 | Analysis point | Pole of inaccessibility of the largest polygon part (always inside the district) | Garcia-Castellanos & Lombardo (2007) |
 | Area, perimeter | Spherical polygon area, R = 6 371 008.8 m; haversine | Chamberlain & Duquette (2007) |
-| Hypsometry | 100-point lattice of Copernicus GLO-90; hypsometric integral (elevation-relief ratio) | Strahler (1952); Pike & Wilson (1971) |
+| Hypsometry | 100-point interior lattice of Copernicus GLO-90; sample-based hypsometric curve and elevation-relief ratio (not area-weighted) | Strahler (1952); Pike & Wilson (1971) |
 | Slope, hillshade | 3x3 Horn finite differences on decoded Terrarium tiles | Horn (1981) |
 | Soil texture | USDA texture triangle from SoilGrids sand/silt/clay; 90 % prediction interval shown | Poggio et al. (2021) |
-| Trends | Mann-Kendall test with tie correction, Sen's slope | Kendall (1975); Sen (1968) |
-| Drought | SPI-3, SPI-12; gamma fit per calendar month on 1991-2020 (Thom MLE), mixed distribution for zeros | McKee et al. (1993); Thom (1958) |
+| Trends | Conventional Mann-Kendall test with tie correction and Sen's slope; nominal p-values assume independent annual observations | Kendall (1975); Sen (1968) |
+| Drought | SPI-3, SPI-12; gamma fit per calendar month on 1991-2020 (Thom MLE), mixed distribution for zeros; windows crossing missing months are omitted | McKee et al. (1993); Thom (1958); WMO (2012), No. 1090 |
 | Climate extremes | TXx, TNn, Rx1day, R20mm, CDD, PRCPTOT, days Tmax >= 40 C | ETCCDI, Zhang et al. (2011) |
 | Return levels | Gumbel by L-moments on annual maxima (rain and river discharge) | Hosking (1990) |
 | Flood status | GloFAS 30-day ensemble median and wettest member vs. 2/5/20-year levels fitted to the consolidated GloFAS reanalysis 1984-2021 | Harrigan et al. (2020) |
@@ -33,7 +33,7 @@ District hazard atlas for all 36 States/UTs and 785 LGD districts of India, buil
 | Seismicity | Mc by maximum curvature + 0.2; b-value by Aki-Utsu MLE, sigma by Shi & Bolt; Poisson recurrence | Aki (1965); Shi & Bolt (1982); Woessner & Wiemer (2005) |
 | Priority ranking | Analytic Hierarchy Process, principal eigenvector, CR = CI / 0.58 | Saaty (1980) |
 
-Every routine in `web/js/analytics.js` and `web/js/geo.js` is tested against SciPy/NumPy (`tests/test_analytics.py`), including SPI against `scipy.stats.gamma`, Sen's slope against `scipy.stats.theilslopes`, return levels against `scipy.stats.gumbel_r`, and a check that the interior point of all 785 districts lies inside its polygon and that district areas sum to the official 3 287 263 km2 within 1 %.
+Selected numerical routines are tested against independent SciPy/NumPy references (`tests/test_analytics.py`), including SPI against `scipy.stats.gamma`, Sen's slope against `scipy.stats.theilslopes`, return levels against `scipy.stats.gumbel_r`, and checks that representative district interior points lie inside their polygons and district areas sum to the official 3 287 263 km2 within 1 %. These checks do not constitute validation of every routine or a substitute for source-data and model review.
 
 ## Data and licences
 
@@ -86,7 +86,7 @@ The app must be served over http(s); `file://` blocks the boundary files and the
 
 ```bash
 pip install -r requirements-dev.txt && python -m playwright install chromium
-python tests/test_analytics.py        # 10 scientific checks against SciPy
+python tests/test_analytics.py        # 14 scientific and geometry checks, including SciPy comparisons
 python tests/smoke_test.py --shots shots   # 59 UI checks, desktop + mobile, screenshots in shots/
 python tools/verify_endpoints.py      # live probe of 39 remote endpoints incl. GIBS fallback names (needs internet)
 python tools/build_boundaries.py      # re-download and re-validate LGD boundaries
@@ -122,6 +122,8 @@ For a Play Store listing without native code, PWABuilder (pwabuilder.com) can wr
 
 - Point analyses use the nearest grid cell: ERA5 0.25 deg, CAMS about 40 km, GloFAS about 5 km. They describe the analysis point, not the district average.
 - ERA5 underestimates convective extremes; reanalysis trends can include observing-system artefacts.
+- Climate trend p-values use the conventional Mann-Kendall test: annual serial correlation and multiple comparisons are not adjusted, so p-values are exploratory, not confirmatory.
+- The hypsometric curve uses a regular interior point sample, not area-weighted pixels; its integral is descriptive and is not a calibrated hazard or erosion predictor.
 - CAMS is a model, not CPCB station data, and often underestimates urban and winter peaks.
 - The inundation layer is a static, connectivity-free screen with metre-scale DEM error.
 - The seismic recurrence is a catalogue-based screening indicator, not a probabilistic seismic hazard assessment; consult IS 1893 and NDMA guidance.
